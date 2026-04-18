@@ -1,3 +1,10 @@
+import BlockedPage from "@/components/BlockedPage";
+
+export default function ContactoPage() {
+  return <BlockedPage />;
+}
+
+/*
 "use client";
 
 import { useState } from "react";
@@ -249,3 +256,4 @@ export default function ContactoPage() {
     </div>
   );
 }
+*/

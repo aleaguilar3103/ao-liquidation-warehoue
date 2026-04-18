@@ -1,5 +1,11 @@
-"use client";
+import BlockedPage from "@/components/BlockedPage";
 
+export default function CatalogoPage() {
+  return <BlockedPage />;
+}
+
+// TEMP BLOCKED - original below
+/*
 import { useState, useEffect } from "react";
 import ProductCard from "@/components/ProductCard";
 import { getProducts } from "@/lib/products";
@@ -85,3 +91,4 @@ export default function CatalogoPage() {
     </div>
   );
 }
+*/

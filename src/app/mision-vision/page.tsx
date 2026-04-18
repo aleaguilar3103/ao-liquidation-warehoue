@@ -1,7 +1,14 @@
+import BlockedPage from "@/components/BlockedPage";
+
+export default function MisionVisionPage() {
+  return <BlockedPage />;
+}
+
+/*
 import { Eye, Target, Lightbulb, Award } from "lucide-react";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 
-export default function MisionVisionPage() {
+export default function MisionVisionPageOriginal() {
   return (
     <div className="min-h-screen bg-white">
       <div className="pt-32 pb-20 px-4">
@@ -125,3 +132,4 @@ export default function MisionVisionPage() {
     </div>
   );
 }
+*/
