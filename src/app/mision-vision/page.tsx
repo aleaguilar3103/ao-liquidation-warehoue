@@ -1,14 +1,7 @@
-import BlockedPage from "@/components/BlockedPage";
-
-export default function MisionVisionPage() {
-  return <BlockedPage />;
-}
-
-/*
 import { Eye, Target, Lightbulb, Award } from "lucide-react";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 
-export default function MisionVisionPageOriginal() {
+export default function MisionVisionPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="pt-32 pb-20 px-4">
@@ -69,9 +62,7 @@ export default function MisionVisionPageOriginal() {
                     <div className="w-12 h-12 bg-gradient-to-br from-brand to-brand-dark rounded-full flex items-center justify-center mr-3">
                       <Lightbulb className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      Innovación
-                    </h3>
+                    <h3 className="text-xl font-bold text-gray-900">Innovación</h3>
                   </div>
                   <p className="text-gray-600">
                     Constantemente buscamos nuevas formas de mejorar nuestros
@@ -84,9 +75,7 @@ export default function MisionVisionPageOriginal() {
                     <div className="w-12 h-12 bg-gradient-to-br from-brand to-brand-dark rounded-full flex items-center justify-center mr-3">
                       <Award className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      Excelencia
-                    </h3>
+                    <h3 className="text-xl font-bold text-gray-900">Excelencia</h3>
                   </div>
                   <p className="text-gray-600">
                     Nos comprometemos a mantener los más altos estándares de
@@ -99,9 +88,7 @@ export default function MisionVisionPageOriginal() {
                     <div className="w-12 h-12 bg-gradient-to-br from-brand to-brand-dark rounded-full flex items-center justify-center mr-3">
                       <Target className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      Integridad
-                    </h3>
+                    <h3 className="text-xl font-bold text-gray-900">Integridad</h3>
                   </div>
                   <p className="text-gray-600">
                     Operamos con transparencia total, construyendo confianza a
@@ -114,9 +101,7 @@ export default function MisionVisionPageOriginal() {
                     <div className="w-12 h-12 bg-gradient-to-br from-brand to-brand-dark rounded-full flex items-center justify-center mr-3">
                       <Eye className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      Compromiso
-                    </h3>
+                    <h3 className="text-xl font-bold text-gray-900">Compromiso</h3>
                   </div>
                   <p className="text-gray-600">
                     Estamos dedicados al éxito de nuestros clientes, brindando
@@ -132,4 +117,3 @@ export default function MisionVisionPageOriginal() {
     </div>
   );
 }
-*/

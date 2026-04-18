@@ -1,10 +1,3 @@
-import BlockedPage from "@/components/BlockedPage";
-
-export default function ContactoPage() {
-  return <BlockedPage />;
-}
-
-/*
 "use client";
 
 import { useState } from "react";
@@ -74,10 +67,7 @@ export default function ContactoPage() {
                   </div>
 
                   <div>
-                    <Label
-                      htmlFor="email"
-                      className="text-gray-700 font-medium"
-                    >
+                    <Label htmlFor="email" className="text-gray-700 font-medium">
                       Correo Electrónico
                     </Label>
                     <Input
@@ -94,10 +84,7 @@ export default function ContactoPage() {
                   </div>
 
                   <div>
-                    <Label
-                      htmlFor="phone"
-                      className="text-gray-700 font-medium"
-                    >
+                    <Label htmlFor="phone" className="text-gray-700 font-medium">
                       Teléfono
                     </Label>
                     <Input
@@ -113,10 +100,7 @@ export default function ContactoPage() {
                   </div>
 
                   <div>
-                    <Label
-                      htmlFor="message"
-                      className="text-gray-700 font-medium"
-                    >
+                    <Label htmlFor="message" className="text-gray-700 font-medium">
                       Mensaje
                     </Label>
                     <Textarea
@@ -186,16 +170,10 @@ export default function ContactoPage() {
                     <Phone className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-1">
-                      Teléfono
-                    </h4>
+                    <h4 className="font-semibold text-gray-900 mb-1">Teléfono</h4>
                     <p className="text-gray-600">+506 7191 0009</p>
-                    <p className="text-sm text-gray-500">
-                      Lunes a Viernes: 8:00 AM – 5:45 PM
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Sábado: 8:00 AM – 12:00 MD
-                    </p>
+                    <p className="text-sm text-gray-500">Lunes a Viernes: 8:00 AM – 5:45 PM</p>
+                    <p className="text-sm text-gray-500">Sábado: 8:00 AM – 12:00 MD</p>
                   </div>
                 </div>
 
@@ -205,12 +183,8 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Email</h4>
-                    <p className="text-gray-600">
-                      info@liquidationwarehouse.com
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Respuesta en 24 horas
-                    </p>
+                    <p className="text-gray-600">info@liquidationwarehouse.com</p>
+                    <p className="text-sm text-gray-500">Respuesta en 24 horas</p>
                   </div>
                 </div>
 
@@ -219,9 +193,7 @@ export default function ContactoPage() {
                     <MapPin className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-1">
-                      Dirección
-                    </h4>
+                    <h4 className="font-semibold text-gray-900 mb-1">Dirección</h4>
                     <p className="text-gray-600">San José Costa Rica</p>
                     <p className="text-gray-600">Los Angeles California</p>
                   </div>
@@ -256,4 +228,3 @@ export default function ContactoPage() {
     </div>
   );
 }
-*/

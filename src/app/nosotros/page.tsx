@@ -1,10 +1,3 @@
-import BlockedPage from "@/components/BlockedPage";
-
-export default function NosotrosPage() {
-  return <BlockedPage />;
-}
-
-/*
 import { Button } from "@/components/ui/button";
 import {
   MessageCircle,
@@ -164,4 +157,3 @@ export default function NosotrosPage() {
     </div>
   );
 }
-*/
