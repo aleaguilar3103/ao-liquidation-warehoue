@@ -71,10 +71,8 @@ export const metadata: Metadata = {
 // CÓDIGO DE COMPONENTE DE LAYOUT ORIGINAL
 // -----------------------------------------------------
 
-// Header and Footer removed while site is temporarily unavailable.
-// To restore: uncomment the imports below and wrap children with <Header /> and <Footer />.
-// import Header from "@/components/Header";
-// import Footer from "@/components/Footer";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -86,7 +84,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
+        <Header />
         <main className="min-h-screen">{children}</main>
+        <Footer />
       </body>
     </html>
   );
