@@ -11,6 +11,9 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
+  // Landing de anuncios: sin nav ni links de salida
+  if (pathname?.startsWith("/valoracion")) return null;
+
   const navItems = [
     { href: "/", label: "Inicio" },
     { href: "/nosotros", label: "Nosotros" },

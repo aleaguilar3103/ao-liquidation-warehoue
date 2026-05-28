@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { MessageCircle, Mail, Phone, MapPin } from "lucide-react";
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/valoracion")) return null;
+
   return (
     <footer className="bg-gradient-to-br from-brand to-brand-dark text-white py-12 px-4">
       <div className="container mx-auto">
@@ -63,8 +69,8 @@ export default function Footer() {
               <li className="flex items-start space-x-2 text-white/70">
                 <MapPin className="w-4 h-4 mt-0.5" />
                 <div className="text-sm">
-                  <div>San José Costa Rica</div>
-                  <div>Los Angeles California</div>
+                  <div><span className="text-white font-medium">Costa Rica:</span> San José</div>
+                  <div><span className="text-white font-medium">USA:</span> Los Angeles, California</div>
                 </div>
               </li>
             </ul>
