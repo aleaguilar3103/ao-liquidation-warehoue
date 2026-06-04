@@ -13,6 +13,8 @@ export default function Header() {
 
   // Landing de anuncios: sin nav ni links de salida
   if (pathname?.startsWith("/valoracion")) return null;
+  // Manual de marca: página independiente para diseñadores
+  if (pathname?.startsWith("/Brand-AOLW")) return null;
 
   const navItems = [
     { href: "/", label: "Inicio" },

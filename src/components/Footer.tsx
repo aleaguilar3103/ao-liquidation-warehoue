@@ -7,6 +7,7 @@ import { MessageCircle, Mail, Phone, MapPin } from "lucide-react";
 export default function Footer() {
   const pathname = usePathname();
   if (pathname?.startsWith("/valoracion")) return null;
+  if (pathname?.startsWith("/Brand-AOLW")) return null;
 
   return (
     <footer className="bg-gradient-to-br from-brand to-brand-dark text-white py-12 px-4">
