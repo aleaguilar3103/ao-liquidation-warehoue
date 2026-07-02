@@ -4,14 +4,23 @@ import Image from "next/image";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Package, ZoomIn, ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  MessageCircle,
+  Package,
+  ZoomIn,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Layers,
+} from "lucide-react";
 import type { Product } from "@/lib/products";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface ProductModalProps {
   product: Product;
@@ -19,210 +28,286 @@ interface ProductModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const WHATSAPP_URL = "https://wa.link/pg0nbh";
+
 export default function ProductModal({
   product,
   open,
   onOpenChange,
 }: ProductModalProps) {
+  const allImages = [
+    product.image_url,
+    ...(product.additional_images || []),
+  ].filter(Boolean);
+  const hasImages = allImages.length > 0;
+  const hasMultipleImages = allImages.length > 1;
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [imageViewerOpen, setImageViewerOpen] = useState(false);
-  
-  const allImages = [product.image_url, ...(product.additional_images || [])];
+  const [zoomOpen, setZoomOpen] = useState(false);
 
-  const nextImage = () => {
+  useEffect(() => {
+    if (!open) {
+      setCurrentImageIndex(0);
+      setZoomOpen(false);
+    }
+  }, [open]);
+
+  const nextImage = useCallback(() => {
+    if (!hasMultipleImages) return;
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-  };
+  }, [allImages.length, hasMultipleImages]);
 
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  };
+  const prevImage = useCallback(() => {
+    if (!hasMultipleImages) return;
+    setCurrentImageIndex(
+      (prev) => (prev - 1 + allImages.length) % allImages.length,
+    );
+  }, [allImages.length, hasMultipleImages]);
 
-  const openImageViewer = () => {
-    setImageViewerOpen(true);
-  };
+  useEffect(() => {
+    if (!zoomOpen || !hasMultipleImages) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") nextImage();
+      if (e.key === "ArrowLeft") prevImage();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [zoomOpen, hasMultipleImages, nextImage, prevImage]);
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto bg-white p-4 md:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent pr-8">
-              {product.title}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[92vh] overflow-y-auto bg-white p-0">
+          <div className="p-5 md:p-7">
+            <DialogHeader className="mb-4 pr-10">
+              <DialogTitle className="text-2xl md:text-3xl font-bold text-brand">
+                {product.title}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-500">
+                Detalles, galería e información para cotizar este pallet.
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-4 md:space-y-6 overflow-x-hidden">
-            {/* Main Image with Navigation */}
-            <div className="relative w-full">
-              <div className="relative w-full h-[300px] md:h-[400px] rounded-lg overflow-hidden bg-gray-100 group">
-                <Image
-                  src={allImages[currentImageIndex]}
-                  alt={product.title}
-                  fill
-                  className="object-contain"
-                />
-                
-                {/* Zoom Button */}
-                <button
-                  onClick={openImageViewer}
-                  className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition opacity-0 group-hover:opacity-100"
-                >
-                  <ZoomIn className="w-4 h-4 md:w-5 md:h-5" />
-                </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-7">
+              <div className="space-y-3">
+                <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+                  {hasImages ? (
+                    <>
+                      <Image
+                        src={allImages[currentImageIndex]}
+                        alt={product.title}
+                        fill
+                        sizes="(max-width: 768px) 95vw, 50vw"
+                        className="object-contain"
+                        priority
+                      />
 
-                {/* Navigation Arrows */}
-                {allImages.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1.5 md:p-2 rounded-full transition"
-                    >
-                      <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1.5 md:p-2 rounded-full transition"
-                    >
-                      <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Thumbnails - Grid layout instead of horizontal scroll */}
-              {allImages.length > 1 && (
-                <div className="w-full mt-3 md:mt-4">
-                  <div className="grid grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                    {allImages.slice(0, 8).map((img, index) => (
                       <button
-                        key={index}
+                        type="button"
+                        onClick={() => setZoomOpen(true)}
+                        aria-label="Ampliar imagen"
+                        className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition shadow"
+                      >
+                        <ZoomIn className="w-4 h-4 md:w-5 md:h-5" />
+                      </button>
+
+                      {hasMultipleImages && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={prevImage}
+                            aria-label="Imagen anterior"
+                            className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition shadow"
+                          >
+                            <ChevronLeft className="w-5 h-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={nextImage}
+                            aria-label="Imagen siguiente"
+                            className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition shadow"
+                          >
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
+
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs md:text-sm px-3 py-1 rounded-full">
+                            {currentImageIndex + 1} / {allImages.length}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                      <Package className="w-12 h-12 mb-2" />
+                      <span className="text-sm">Sin imagen disponible</span>
+                    </div>
+                  )}
+                </div>
+
+                {hasMultipleImages && (
+                  <div className="grid grid-cols-5 gap-2">
+                    {allImages.slice(0, 5).map((img, index) => (
+                      <button
+                        type="button"
+                        key={`${img}-${index}`}
                         onClick={() => setCurrentImageIndex(index)}
+                        aria-label={`Ver imagen ${index + 1}`}
+                        aria-current={currentImageIndex === index}
                         className={`relative w-full aspect-square rounded-lg overflow-hidden border-2 transition ${
                           currentImageIndex === index
-                            ? "border-brand shadow-lg"
+                            ? "border-brand ring-2 ring-brand/30"
                             : "border-gray-200 hover:border-gray-400"
                         }`}
                       >
                         <Image
                           src={img}
-                          alt={`${product.title} - ${index + 1}`}
+                          alt={`${product.title} miniatura ${index + 1}`}
                           fill
+                          sizes="80px"
                           className="object-cover"
                         />
+                        {index === 4 && allImages.length > 5 && (
+                          <div className="absolute inset-0 bg-black/60 text-white flex items-center justify-center text-xs font-semibold">
+                            +{allImages.length - 5}
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
-                  {allImages.length > 8 && (
-                    <p className="text-xs text-gray-500 text-center mt-2">
-                      +{allImages.length - 8} imágenes más
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-              <Badge className="bg-gradient-to-r from-brand to-brand-dark text-white text-xs md:text-sm px-3 md:px-4 py-1">
-                {product.category}
-              </Badge>
-              
-              <Badge className={product.available ? "bg-green-500 text-white" : "bg-red-500 text-white"}>
-                {product.available ? "Disponible" : "No Disponible"}
-              </Badge>
-            </div>
-
-            <div>
-              <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2">
-                Descripción
-              </h3>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed">{product.description}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              <div className="bg-brand/5 p-3 md:p-4 rounded-lg border border-brand/20">
-                <div className="flex items-center mb-2">
-                  <Package className="w-4 h-4 md:w-5 md:h-5 text-brand mr-2" />
-                  <h4 className="font-semibold text-gray-900 text-sm md:text-base">Precio</h4>
-                </div>
-                <Button
-                  asChild
-                  variant="link"
-                  className="p-0 h-auto text-brand hover:text-brand-dark font-semibold text-sm md:text-base"
-                >
-                  <a href="/contacto">Cotizar</a>
-                </Button>
+                )}
               </div>
 
-              {product.quantity > 0 && (
-                <div className="bg-brand/5 p-3 md:p-4 rounded-lg border border-brand/20">
-                  <div className="flex items-center mb-2">
-                    <Package className="w-4 h-4 md:w-5 md:h-5 text-brand mr-2" />
-                    <h4 className="font-semibold text-gray-900 text-sm md:text-base">Cantidad</h4>
-                  </div>
-                  <p className="text-gray-600 text-sm md:text-base">{product.quantity} pallets disponibles</p>
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-2 flex-wrap">
+                  <Badge className="bg-brand text-white text-xs md:text-sm px-3 py-1">
+                    {product.category}
+                  </Badge>
+                  <Badge
+                    className={
+                      product.available
+                        ? "bg-green-600 text-white"
+                        : "bg-red-500 text-white"
+                    }
+                  >
+                    {product.available ? "Disponible" : "No disponible"}
+                  </Badge>
                 </div>
-              )}
-            </div>
 
-            <div className="bg-gradient-to-br from-brand/5 to-white p-4 md:p-6 rounded-lg border-2 border-brand/20">
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
-                ¿Interesado en este pallet?
-              </h3>
-              <p className="text-sm md:text-base text-gray-600 mb-4">
-                Contáctanos por WhatsApp para obtener más información y precios mayoristas.
-              </p>
-              <Button
-                asChild
-                size="lg"
-                className="w-full bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-white"
-              >
-                <a
-                  href="https://wa.link/pg0nbh"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MessageCircle className="mr-2 w-4 h-4 md:w-5 md:h-5" />
-                  Contactar por WhatsApp
-                </a>
-              </Button>
+                {product.description && (
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                      Descripción
+                    </h3>
+                    <p className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-line">
+                      {product.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  {product.quantity > 0 && (
+                    <div className="bg-brand/5 p-3 rounded-lg border border-brand/15">
+                      <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wide mb-1">
+                        <Package className="w-4 h-4" /> Pallets
+                      </div>
+                      <p className="text-gray-900 font-semibold text-lg">
+                        {product.quantity}
+                      </p>
+                    </div>
+                  )}
+                  {product.units_per_pallet > 0 && (
+                    <div className="bg-brand/5 p-3 rounded-lg border border-brand/15">
+                      <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wide mb-1">
+                        <Layers className="w-4 h-4" /> Unidades por pallet
+                      </div>
+                      <p className="text-gray-900 font-semibold text-lg">
+                        {product.units_per_pallet}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-auto bg-gradient-to-br from-brand/10 to-white p-4 md:p-5 rounded-xl border border-brand/20">
+                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-1">
+                    ¿Te interesa este pallet?
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Contáctanos por WhatsApp para precios mayoristas e
+                    información detallada.
+                  </p>
+                  <Button
+                    asChild
+                    size="lg"
+                    disabled={!product.available}
+                    className="w-full bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-white"
+                  >
+                    <a
+                      href={WHATSAPP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="mr-2 w-4 h-4 md:w-5 md:h-5" />
+                      {product.available
+                        ? "Contactar por WhatsApp"
+                        : "Producto no disponible"}
+                    </a>
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Full Screen Image Viewer */}
-      <Dialog open={imageViewerOpen} onOpenChange={setImageViewerOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] bg-black/95 border-none p-0 overflow-hidden">
+      <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+        <DialogContent
+          hideClose
+          className="max-w-[100vw] sm:max-w-[100vw] w-screen h-screen bg-black/95 border-none p-0 rounded-none sm:rounded-none"
+        >
+          <DialogTitle className="sr-only">{product.title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Vista ampliada de la imagen del producto.
+          </DialogDescription>
+
           <button
-            onClick={() => setImageViewerOpen(false)}
-            className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition"
+            type="button"
+            onClick={() => setZoomOpen(false)}
+            aria-label="Cerrar vista ampliada"
+            className="absolute top-3 right-3 md:top-5 md:right-5 z-50 bg-white/10 hover:bg-white/25 text-white p-2 rounded-full transition"
           >
             <X className="w-5 h-5 md:w-6 md:h-6" />
           </button>
-          
-          <div className="relative w-full h-full flex items-center justify-center p-4 md:p-8">
-            <img
-              src={allImages[currentImageIndex]}
-              alt={product.title}
-              className="max-h-full max-w-full object-contain"
-            />
-            
-            {allImages.length > 1 && (
+
+          <div className="relative w-full h-full flex items-center justify-center p-4 md:p-10">
+            {hasImages && (
+              <img
+                src={allImages[currentImageIndex]}
+                alt={product.title}
+                className="max-h-full max-w-full object-contain select-none"
+                draggable={false}
+              />
+            )}
+
+            {hasMultipleImages && (
               <>
                 <button
+                  type="button"
                   onClick={prevImage}
-                  className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 md:p-3 rounded-full transition"
+                  aria-label="Imagen anterior"
+                  className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white p-2 md:p-3 rounded-full transition"
                 >
                   <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
                 </button>
                 <button
+                  type="button"
                   onClick={nextImage}
-                  className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 md:p-3 rounded-full transition"
+                  aria-label="Imagen siguiente"
+                  className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white p-2 md:p-3 rounded-full transition"
                 >
                   <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
                 </button>
-                
-                <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 bg-white/10 px-3 md:px-4 py-1.5 md:py-2 rounded-full text-white text-sm md:text-base">
+
+                <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-white/10 text-white text-sm md:text-base px-3 py-1.5 rounded-full">
                   {currentImageIndex + 1} / {allImages.length}
                 </div>
               </>

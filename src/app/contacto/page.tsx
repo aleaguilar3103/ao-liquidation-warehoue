@@ -10,21 +10,46 @@ import { MessageCircle, Mail, Phone, MapPin, Send } from "lucide-react";
 
 export default function ContactoPage() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
+  const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
-  const whatsappNumber = "15551234567";
+  const whatsappNumber = "50671910009";
   const whatsappMessage = encodeURIComponent("Hola, me gustaría obtener más información");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const message = encodeURIComponent(`Hola, mi nombre es ${formData.name}. ${formData.message}`);
-    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank");
+    setStatus("sending");
+    setErrorMsg("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Error al enviar el mensaje");
+      }
+
+      setStatus("success");
+      const waMessage = encodeURIComponent(
+        `Hola, mi nombre es ${formData.name}. ${formData.message}`
+      );
+      window.open(`https://wa.me/${whatsappNumber}?text=${waMessage}`, "_blank");
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } catch (err) {
+      setStatus("error");
+      setErrorMsg(err instanceof Error ? err.message : "Error al enviar el mensaje");
+    }
   };
 
   return (
     <div className="pt-32 pb-20 px-4 bg-white min-h-screen">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent">
             Contáctanos
           </h1>
           <p className="text-xl text-gray-600">Estamos aquí para ayudarte a hacer crecer tu negocio</p>
@@ -46,16 +71,31 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <Label htmlFor="phone" className="text-gray-700 font-medium">Teléfono</Label>
-                    <Input id="phone" type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="mt-2 border-gray-300 focus:border-brand" placeholder="+1 (555) 123-4567" />
+                    <Input id="phone" type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="mt-2 border-gray-300 focus:border-brand" placeholder="+506 8888 8888" />
                   </div>
                   <div>
                     <Label htmlFor="message" className="text-gray-700 font-medium">Mensaje</Label>
                     <Textarea id="message" required value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="mt-2 border-gray-300 focus:border-brand min-h-32" placeholder="Cuéntanos sobre tu negocio y qué tipo de pallets te interesan..." />
                   </div>
-                  <Button type="submit" size="lg" className="w-full bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-white">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={status === "sending"}
+                    className="w-full bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-white disabled:opacity-60"
+                  >
                     <Send className="mr-2 w-5 h-5" />
-                    Enviar Mensaje
+                    {status === "sending" ? "Enviando..." : "Enviar Mensaje"}
                   </Button>
+                  {status === "success" && (
+                    <p className="text-sm text-green-600 text-center font-medium">
+                      ¡Mensaje enviado! Te contactaremos pronto.
+                    </p>
+                  )}
+                  {status === "error" && (
+                    <p className="text-sm text-red-600 text-center font-medium">
+                      {errorMsg}
+                    </p>
+                  )}
                 </form>
               </CardContent>
             </Card>
@@ -87,17 +127,17 @@ export default function ContactoPage() {
                 <h3 className="text-2xl font-bold text-gray-900 mb-6">Información de Contacto</h3>
                 {[
                   { icon: Phone, label: "Teléfono", lines: ["+506 7191 0009", "Lunes a Viernes: 8:00 AM – 5:45 PM", "Sábado: 8:00 AM – 12:00 MD"] },
-                  { icon: Mail, label: "Email", lines: ["info@liquidationwarehouse.com", "Respuesta en 24 horas"] },
-                  { icon: MapPin, label: "Dirección", lines: ["San José Costa Rica", "Los Angeles California"] },
+                  { icon: Mail, label: "Email", lines: ["info@aoliquidationwarehouse.com", "Respuesta en 24 horas"] },
+                  { icon: MapPin, label: "Dirección", lines: ["Costa Rica: San José", "USA: Los Angeles, California"] },
                 ].map(({ icon: Icon, label, lines }) => (
                   <div key={label} className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-brand to-brand-dark rounded-full flex items-center justify-center flex-shrink-0">
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h4 className="font-semibold text-gray-900 mb-1">{label}</h4>
                       {lines.map((line, i) => (
-                        <p key={i} className={i === 0 ? "text-gray-600" : "text-sm text-gray-500"}>{line}</p>
+                        <p key={i} className={`break-words ${i === 0 ? "text-gray-600" : "text-sm text-gray-500"}`}>{line}</p>
                       ))}
                     </div>
                   </div>

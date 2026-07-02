@@ -1,43 +1,112 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getProducts, addProduct, updateProduct, deleteProduct, Product } from "@/lib/products";
+import { useState, useEffect, useCallback } from "react";
+import {
+  getProducts,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+  Product,
+} from "@/lib/products";
 import { uploadProductImage } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Upload, X, Package, Layers, Star, Grid3x3, RefreshCw, Grid, List, ZoomIn, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Upload,
+  X,
+  Package,
+  Layers,
+  Star,
+  Grid3x3,
+  RefreshCw,
+  Grid,
+  List,
+  ZoomIn,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { AdminNav } from "@/components/admin/AdminNav";
+
+interface FormData {
+  title: string;
+  category: string;
+  description: string;
+  quantity: number;
+  units_per_pallet: number;
+  featured: boolean;
+  available: boolean;
+}
+
+const EMPTY_FORM: FormData = {
+  title: "",
+  category: "",
+  description: "",
+  quantity: 0,
+  units_per_pallet: 0,
+  featured: false,
+  available: true,
+};
 
 export default function AdminProductosPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [currentProductImages, setCurrentProductImages] = useState<string[]>([]);
+  const [currentProductImages, setCurrentProductImages] = useState<string[]>(
+    [],
+  );
+
   const { toast } = useToast();
 
-  const [formData, setFormData] = useState({
-    title: "",
-    category: "",
-    description: "",
-    quantity: 0,
-    units_per_pallet: 0,
-    featured: false,
-    available: true,
-  });
-
+  const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [additionalImages, setAdditionalImages] = useState<File[]>([]);
   const [mainImagePreview, setMainImagePreview] = useState<string>("");
@@ -54,24 +123,51 @@ export default function AdminProductosPage() {
     setRefreshing(false);
   };
 
+  const resetForm = useCallback(() => {
+    setEditingProduct(null);
+    setFormData(EMPTY_FORM);
+    setMainImage(null);
+    setAdditionalImages([]);
+    setMainImagePreview("");
+    setAdditionalPreviews([]);
+  }, []);
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      // Defer reset so closing animation doesn't show empty content first
+      setTimeout(resetForm, 200);
+    }
+  };
+
   const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setMainImage(file);
       setMainImagePreview(URL.createObjectURL(file));
     }
+    e.target.value = "";
   };
 
-  const handleAdditionalImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAdditionalImagesChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = Array.from(e.target.files || []);
-    setAdditionalImages([...additionalImages, ...files]);
-    const previews = files.map(file => URL.createObjectURL(file));
-    setAdditionalPreviews([...additionalPreviews, ...previews]);
+    if (!files.length) return;
+    setAdditionalImages((prev) => [...prev, ...files]);
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setAdditionalPreviews((prev) => [...prev, ...previews]);
+    e.target.value = "";
   };
 
   const removeAdditionalImage = (index: number) => {
-    setAdditionalImages(additionalImages.filter((_, i) => i !== index));
-    setAdditionalPreviews(additionalPreviews.filter((_, i) => i !== index));
+    setAdditionalImages((prev) => prev.filter((_, i) => i !== index));
+    setAdditionalPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeMainImage = () => {
+    setMainImage(null);
+    setMainImagePreview("");
   };
 
   const startEdit = (product: Product) => {
@@ -85,43 +181,55 @@ export default function AdminProductosPage() {
       featured: product.featured,
       available: product.available ?? true,
     });
+    setMainImage(null);
+    setAdditionalImages([]);
     setMainImagePreview(product.image_url);
     setAdditionalPreviews(product.additional_images || []);
     setDialogOpen(true);
   };
 
-  const resetForm = () => {
-    setEditingProduct(null);
-    setFormData({
-      title: "",
-      category: "",
-      description: "",
-      quantity: 0,
-      units_per_pallet: 0,
-      featured: false,
-      available: true,
-    });
-    setMainImage(null);
-    setAdditionalImages([]);
-    setMainImagePreview("");
-    setAdditionalPreviews([]);
-    setDialogOpen(false);
+  const openNewProduct = () => {
+    resetForm();
+    setDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.title.trim() || !formData.category.trim()) {
+      toast({
+        title: "Faltan datos",
+        description: "El título y la categoría son obligatorios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editingProduct && !mainImage) {
+      toast({
+        title: "Imagen requerida",
+        description: "Debes subir una imagen principal para el producto.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       let mainImageUrl = editingProduct?.image_url || "";
-      
+
       if (mainImage) {
         const url = await uploadProductImage(mainImage);
         if (url) mainImageUrl = url;
       }
 
+      if (!mainImageUrl) {
+        throw new Error("No se pudo obtener la imagen principal.");
+      }
+
       const additionalImageUrls: string[] = [];
-      
+
       if (editingProduct) {
         const existingUrls = editingProduct.additional_images || [];
         existingUrls.forEach((url) => {
@@ -138,6 +246,9 @@ export default function AdminProductosPage() {
 
       const productData = {
         ...formData,
+        title: formData.title.trim(),
+        category: formData.category.trim(),
+        description: formData.description.trim(),
         image_url: mainImageUrl,
         additional_images: additionalImageUrls,
       };
@@ -146,22 +257,25 @@ export default function AdminProductosPage() {
         await updateProduct(editingProduct.id, productData);
         toast({
           title: "Producto actualizado",
-          description: "El producto se actualizó correctamente",
+          description: "Los cambios se guardaron correctamente.",
         });
       } else {
         await addProduct(productData);
         toast({
           title: "Producto creado",
-          description: "El producto se creó correctamente",
+          description: "El producto se agregó al catálogo.",
         });
       }
 
-      resetForm();
+      handleDialogOpenChange(false);
       fetchProducts();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Hubo un error al guardar el producto",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Hubo un error al guardar el producto.",
         variant: "destructive",
       });
     } finally {
@@ -169,20 +283,23 @@ export default function AdminProductosPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de eliminar este producto?")) return;
-    
-    const success = await deleteProduct(id);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const success = await deleteProduct(deleteTarget.id);
+    setDeleting(false);
+
     if (success) {
       toast({
         title: "Producto eliminado",
-        description: "El producto se eliminó correctamente",
+        description: `"${deleteTarget.title}" se eliminó correctamente.`,
       });
+      setDeleteTarget(null);
       fetchProducts();
     } else {
       toast({
         title: "Error",
-        description: "No se pudo eliminar el producto",
+        description: "No se pudo eliminar el producto.",
         variant: "destructive",
       });
     }
@@ -193,77 +310,119 @@ export default function AdminProductosPage() {
       ...product,
       available: !product.available,
     };
-    
+
     const success = await updateProduct(product.id, updatedProduct);
     if (success) {
       toast({
         title: "Disponibilidad actualizada",
-        description: `Producto marcado como ${!product.available ? 'disponible' : 'no disponible'}`,
+        description: `"${product.title}" ahora está ${
+          !product.available ? "disponible" : "no disponible"
+        }.`,
       });
       fetchProducts();
     } else {
       toast({
         title: "Error",
-        description: "No se pudo actualizar la disponibilidad",
+        description: "No se pudo actualizar la disponibilidad.",
         variant: "destructive",
       });
     }
   };
 
   const openImageViewer = (product: Product, startIndex: number = 0) => {
-    const allImages = [product.image_url, ...(product.additional_images || [])];
+    const allImages = [
+      product.image_url,
+      ...(product.additional_images || []),
+    ].filter(Boolean);
+    if (!allImages.length) return;
     setCurrentProductImages(allImages);
     setCurrentImageIndex(startIndex);
     setImageViewerOpen(true);
   };
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % currentProductImages.length);
-  };
+  const nextImage = useCallback(() => {
+    setCurrentImageIndex(
+      (prev) => (prev + 1) % currentProductImages.length,
+    );
+  }, [currentProductImages.length]);
 
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + currentProductImages.length) % currentProductImages.length);
-  };
+  const prevImage = useCallback(() => {
+    setCurrentImageIndex(
+      (prev) =>
+        (prev - 1 + currentProductImages.length) %
+        currentProductImages.length,
+    );
+  }, [currentProductImages.length]);
+
+  useEffect(() => {
+    if (!imageViewerOpen || currentProductImages.length <= 1) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") nextImage();
+      if (e.key === "ArrowLeft") prevImage();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [imageViewerOpen, currentProductImages.length, nextImage, prevImage]);
 
   const totalProducts = products.length;
   const totalPallets = products.reduce((sum, p) => sum + p.quantity, 0);
-  const featuredProducts = products.filter(p => p.featured).length;
-  const categories = new Set(products.map(p => p.category)).size;
+  const featuredProducts = products.filter((p) => p.featured).length;
+  const categories = new Set(products.map((p) => p.category)).size;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 px-4 pt-32">
       <Toaster />
-      
-      {/* Image Viewer Modal */}
+
+      {/* Fullscreen Image Viewer */}
       <Dialog open={imageViewerOpen} onOpenChange={setImageViewerOpen}>
-        <DialogContent className="max-w-5xl h-[90vh] bg-black/95">
-          <div className="relative h-full flex items-center justify-center">
-            <img
-              src={currentProductImages[currentImageIndex]}
-              alt="Product"
-              className="max-h-full max-w-full object-contain"
-            />
-            
+        <DialogContent
+          hideClose
+          className="max-w-[100vw] sm:max-w-[100vw] w-screen h-screen bg-black/95 border-none p-0 rounded-none sm:rounded-none"
+        >
+          <DialogTitle className="sr-only">Vista de imagen</DialogTitle>
+          <DialogDescription className="sr-only">
+            Visor de imagen ampliada.
+          </DialogDescription>
+
+          <button
+            type="button"
+            onClick={() => setImageViewerOpen(false)}
+            aria-label="Cerrar visor"
+            className="absolute top-3 right-3 md:top-5 md:right-5 z-50 bg-white/10 hover:bg-white/25 text-white p-2 rounded-full transition"
+          >
+            <X className="h-5 w-5 md:h-6 md:w-6" />
+          </button>
+
+          <div className="relative w-full h-full flex items-center justify-center p-4 md:p-10">
+            {currentProductImages[currentImageIndex] && (
+              <img
+                src={currentProductImages[currentImageIndex]}
+                alt="Vista ampliada del producto"
+                className="max-h-full max-w-full object-contain select-none"
+                draggable={false}
+              />
+            )}
+
             {currentProductImages.length > 1 && (
               <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white"
+                <button
+                  type="button"
                   onClick={prevImage}
+                  aria-label="Imagen anterior"
+                  className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white p-2 md:p-3 rounded-full transition"
                 >
-                  <ChevronLeft className="h-8 w-8" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white"
+                  <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
+                </button>
+                <button
+                  type="button"
                   onClick={nextImage}
+                  aria-label="Imagen siguiente"
+                  className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white p-2 md:p-3 rounded-full transition"
                 >
-                  <ChevronRight className="h-8 w-8" />
-                </Button>
-                
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/10 px-4 py-2 rounded-full text-white">
+                  <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
+                </button>
+
+                <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-white/10 text-white text-sm md:text-base px-3 py-1.5 rounded-full">
                   {currentImageIndex + 1} / {currentProductImages.length}
                 </div>
               </>
@@ -272,25 +431,348 @@ export default function AdminProductosPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && !deleting && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar producto</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Seguro que deseas eliminar{" "}
+              <span className="font-semibold text-gray-900">
+                {deleteTarget?.title}
+              </span>
+              ? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Product Form Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0">
+          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4">
+            <DialogHeader className="pr-10">
+              <DialogTitle className="text-2xl text-brand">
+                {editingProduct ? "Editar producto" : "Nuevo producto"}
+              </DialogTitle>
+              <DialogDescription>
+                {editingProduct
+                  ? "Actualiza la información del producto seleccionado."
+                  : "Completa los campos para agregar un producto al catálogo."}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="title">
+                  Título <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  required
+                  placeholder="Ej: Pallet de Electrónicos"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="category">
+                  Categoría <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="category"
+                  value={formData.category}
+                  onChange={(e) =>
+                    setFormData({ ...formData, category: e.target.value })
+                  }
+                  required
+                  placeholder="Ej: Electrónicos"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="quantity">Cantidad de pallets</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min={0}
+                  value={formData.quantity}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      quantity: Math.max(0, parseInt(e.target.value) || 0),
+                    })
+                  }
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="units">Unidades por pallet</Label>
+                <Input
+                  id="units"
+                  type="number"
+                  min={0}
+                  value={formData.units_per_pallet}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      units_per_pallet: Math.max(
+                        0,
+                        parseInt(e.target.value) || 0,
+                      ),
+                    })
+                  }
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                rows={4}
+                placeholder="Describe el producto, características y condiciones..."
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label
+                htmlFor="featured"
+                className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${
+                  formData.featured
+                    ? "border-yellow-400 bg-yellow-50"
+                    : "border-gray-200 hover:border-gray-300 bg-white"
+                }`}
+              >
+                <Checkbox
+                  id="featured"
+                  checked={formData.featured}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, featured: checked === true })
+                  }
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900 flex items-center gap-1.5">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    Destacado
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Aparecerá en la sección principal del sitio.
+                  </p>
+                </div>
+              </label>
+
+              <label
+                htmlFor="available"
+                className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${
+                  formData.available
+                    ? "border-green-400 bg-green-50"
+                    : "border-gray-200 hover:border-gray-300 bg-white"
+                }`}
+              >
+                <Checkbox
+                  id="available"
+                  checked={formData.available}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, available: checked === true })
+                  }
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">
+                    Disponible para venta
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Los clientes podrán solicitarlo por WhatsApp.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>
+                Imagen principal{" "}
+                {!editingProduct && <span className="text-red-500">*</span>}
+              </Label>
+              {mainImagePreview ? (
+                <div className="relative inline-block">
+                  <img
+                    src={mainImagePreview}
+                    alt="Imagen principal"
+                    className="h-40 w-40 rounded-lg object-cover border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeMainImage}
+                    aria-label="Eliminar imagen principal"
+                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <label className="absolute bottom-2 left-2 bg-white/90 hover:bg-white text-gray-700 text-xs px-2 py-1 rounded-md shadow cursor-pointer">
+                    Cambiar
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleMainImageChange}
+                    />
+                  </label>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-brand transition">
+                  <div className="flex flex-col items-center text-gray-500">
+                    <Upload className="h-7 w-7" />
+                    <span className="mt-2 text-sm">
+                      Subir imagen principal
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleMainImageChange}
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Imágenes adicionales</Label>
+              <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-brand transition">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Upload className="h-5 w-5" />
+                  <span className="text-sm">
+                    Agregar más imágenes (opcional)
+                  </span>
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  multiple
+                  onChange={handleAdditionalImagesChange}
+                />
+              </label>
+              {additionalPreviews.length > 0 && (
+                <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {additionalPreviews.map((preview, index) => (
+                    <div key={preview} className="relative group">
+                      <img
+                        src={preview}
+                        alt={`Imagen adicional ${index + 1}`}
+                        className="h-24 w-full object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeAdditionalImage(index)}
+                        aria-label={`Eliminar imagen ${index + 1}`}
+                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="pt-2 border-t border-gray-100 -mx-6 px-6 sticky bottom-0 bg-white">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleDialogOpenChange(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="bg-brand hover:bg-brand-dark text-white"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : editingProduct ? (
+                  "Actualizar producto"
+                ) : (
+                  "Guardar producto"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <div className="container mx-auto max-w-7xl">
+        {/* Admin navigation */}
+        <div className="mb-6">
+          <AdminNav />
+        </div>
+
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-wrap justify-between items-center mb-8 gap-3">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent">
               Panel de Administración
             </h1>
-            <p className="text-gray-600 mt-2">Gestiona tu catálogo de productos</p>
+            <p className="text-gray-600 mt-2">
+              Gestiona tu catálogo de productos
+            </p>
           </div>
-          
-          <div className="flex gap-3">
-            <Button 
+
+          <div className="flex flex-wrap gap-3">
+            <Button
               variant="outline"
               size="lg"
               onClick={fetchProducts}
               disabled={refreshing}
               className="gap-2"
             >
-              <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`}
+              />
               Actualizar
             </Button>
 
@@ -299,6 +781,7 @@ export default function AdminProductosPage() {
                 variant={viewMode === "grid" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("grid")}
+                aria-label="Vista de cuadrícula"
               >
                 <Grid className="h-4 w-4" />
               </Button>
@@ -306,189 +789,20 @@ export default function AdminProductosPage() {
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("list")}
+                aria-label="Vista de lista"
               >
                 <List className="h-4 w-4" />
               </Button>
             </div>
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  size="lg" 
-                  className="bg-gradient-to-r from-brand to-brand-dark hover:opacity-90"
-                  onClick={() => resetForm()}
-                >
-                  <Plus className="mr-2 h-5 w-5" />
-                  Agregar Producto
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl">
-                    {editingProduct ? "Editar Producto" : "Nuevo Producto"}
-                  </DialogTitle>
-                </DialogHeader>
-                
-                <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="title">Título *</Label>
-                      <Input
-                        id="title"
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        required
-                        placeholder="Ej: Pallet de Electrónicos"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="category">Categoría *</Label>
-                      <Input
-                        id="category"
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        required
-                        placeholder="Ej: Electrónicos"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="quantity">Cantidad de Pallets</Label>
-                      <Input
-                        id="quantity"
-                        type="number"
-                        value={formData.quantity}
-                        onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
-                        placeholder="0"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="units">Unidades por Pallet</Label>
-                      <Input
-                        id="units"
-                        type="number"
-                        value={formData.units_per_pallet}
-                        onChange={(e) => setFormData({ ...formData, units_per_pallet: parseInt(e.target.value) || 0 })}
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
-                    <h3 className="font-semibold text-gray-900 text-lg mb-4">Opciones del Producto</h3>
-                    
-                    <div className="flex items-center space-x-3 p-4 bg-white border-2 border-gray-300 rounded-lg hover:border-brand transition cursor-pointer">
-                      <input
-                        type="checkbox"
-                        id="featured"
-                        checked={formData.featured}
-                        onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                        className="h-6 w-6 rounded border-gray-400 text-brand focus:ring-brand cursor-pointer"
-                      />
-                      <Label htmlFor="featured" className="cursor-pointer font-medium text-gray-900 text-base flex-1">
-                        ⭐ Marcar como Producto Destacado
-                      </Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3 p-4 bg-white border-2 border-gray-300 rounded-lg hover:border-green-500 transition cursor-pointer">
-                      <input
-                        type="checkbox"
-                        id="available"
-                        checked={formData.available}
-                        onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
-                        className="h-6 w-6 rounded border-gray-400 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                      <Label htmlFor="available" className="cursor-pointer font-medium text-gray-900 text-base flex-1">
-                        ✅ Producto Disponible para la Venta
-                      </Label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Descripción</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={4}
-                      placeholder="Describe el producto..."
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="mainImage">Imagen Principal {!editingProduct && "*"}</Label>
-                    <div className="mt-2">
-                      <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                        <div className="flex flex-col items-center">
-                          <Upload className="h-8 w-8 text-gray-400" />
-                          <span className="mt-2 text-sm text-gray-500">
-                            {editingProduct ? "Cambiar imagen principal" : "Subir imagen principal"}
-                          </span>
-                        </div>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleMainImageChange}
-                          required={!editingProduct}
-                        />
-                      </label>
-                      {mainImagePreview && (
-                        <div className="mt-4">
-                          <img src={mainImagePreview} alt="Preview" className="h-40 rounded-lg object-cover" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Imágenes Adicionales</Label>
-                    <div className="mt-2">
-                      <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                        <div className="flex flex-col items-center">
-                          <Upload className="h-8 w-8 text-gray-400" />
-                          <span className="mt-2 text-sm text-gray-500">Subir imágenes adicionales</span>
-                        </div>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          multiple
-                          onChange={handleAdditionalImagesChange}
-                        />
-                      </label>
-                      {additionalPreviews.length > 0 && (
-                        <div className="mt-4 grid grid-cols-4 gap-4">
-                          {additionalPreviews.map((preview, index) => (
-                            <div key={index} className="relative">
-                              <img src={preview} alt={`Preview ${index}`} className="h-24 w-full object-cover rounded-lg" />
-                              <button
-                                type="button"
-                                onClick={() => removeAdditionalImage(index)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4 pt-4">
-                    <Button type="submit" disabled={loading} className="flex-1">
-                      {loading ? "Guardando..." : editingProduct ? "Actualizar Producto" : "Guardar Producto"}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={resetForm} className="flex-1">
-                      Cancelar
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-brand to-brand-dark hover:opacity-90"
+              onClick={openNewProduct}
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Agregar Producto
+            </Button>
           </div>
         </div>
 
@@ -498,7 +812,9 @@ export default function AdminProductosPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Productos</p>
-                <p className="text-3xl font-bold text-brand">{totalProducts}</p>
+                <p className="text-3xl font-bold text-brand">
+                  {totalProducts}
+                </p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-brand to-brand-dark rounded-full flex items-center justify-center">
                 <Package className="w-6 h-6 text-white" />
@@ -510,7 +826,9 @@ export default function AdminProductosPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Pallets</p>
-                <p className="text-3xl font-bold text-purple-600">{totalPallets}</p>
+                <p className="text-3xl font-bold text-purple-600">
+                  {totalPallets}
+                </p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center">
                 <Layers className="w-6 h-6 text-white" />
@@ -522,7 +840,9 @@ export default function AdminProductosPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Destacados</p>
-                <p className="text-3xl font-bold text-yellow-600">{featuredProducts}</p>
+                <p className="text-3xl font-bold text-yellow-600">
+                  {featuredProducts}
+                </p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center">
                 <Star className="w-6 h-6 text-white" />
@@ -534,7 +854,9 @@ export default function AdminProductosPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Categorías</p>
-                <p className="text-3xl font-bold text-green-600">{categories}</p>
+                <p className="text-3xl font-bold text-green-600">
+                  {categories}
+                </p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-full flex items-center justify-center">
                 <Grid3x3 className="w-6 h-6 text-white" />
@@ -547,27 +869,33 @@ export default function AdminProductosPage() {
         {viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
-              <Card key={product.id} className="overflow-hidden hover:shadow-xl transition group">
-                <div className="relative h-48 overflow-hidden group">
+              <Card
+                key={product.id}
+                className="overflow-hidden hover:shadow-xl transition group"
+              >
+                <div className="relative h-48 overflow-hidden">
                   <img
                     src={product.image_url}
                     alt={product.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
                   />
                   <button
+                    type="button"
                     onClick={() => openImageViewer(product, 0)}
-                    className="absolute inset-0 bg-black/0 hover:bg-black/40 transition flex items-center justify-center opacity-0 hover:opacity-100"
+                    aria-label={`Ver imágenes de ${product.title}`}
+                    className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-center justify-center opacity-0 group-hover:opacity-100"
                   >
                     <ZoomIn className="h-8 w-8 text-white" />
                   </button>
-                  
-                  {/* Availability Badge */}
-                  <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-bold text-white ${
-                    product.available ? 'bg-green-500' : 'bg-red-500'
-                  }`}>
-                    {product.available ? 'DISPONIBLE' : 'NO DISPONIBLE'}
+
+                  <div
+                    className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-bold text-white ${
+                      product.available ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  >
+                    {product.available ? "DISPONIBLE" : "NO DISPONIBLE"}
                   </div>
-                  
+
                   {product.featured && (
                     <div className="absolute top-2 right-2 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
                       <Star className="h-3 w-3 fill-current" />
@@ -576,10 +904,17 @@ export default function AdminProductosPage() {
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-bold text-lg mb-1 text-gray-800">{product.title}</h3>
-                  <p className="text-sm text-brand font-semibold mb-2">{product.category}</p>
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
-                  {(product.quantity > 0 || product.units_per_pallet > 0) && (
+                  <h3 className="font-bold text-lg mb-1 text-gray-800 line-clamp-1">
+                    {product.title}
+                  </h3>
+                  <p className="text-sm text-brand font-semibold mb-2">
+                    {product.category}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    {product.description}
+                  </p>
+                  {(product.quantity > 0 ||
+                    product.units_per_pallet > 0) && (
                     <div className="flex gap-2 text-xs text-gray-500 mb-4">
                       {product.quantity > 0 && (
                         <span className="bg-gray-100 px-2 py-1 rounded">
@@ -593,16 +928,17 @@ export default function AdminProductosPage() {
                       )}
                     </div>
                   )}
-                  
-                  {/* Availability Switch */}
+
                   <div className="flex items-center justify-between mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="text-sm font-medium text-gray-700">Disponible</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Disponible
+                    </span>
                     <Switch
                       checked={product.available}
                       onCheckedChange={() => toggleAvailability(product)}
                     />
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
@@ -616,7 +952,7 @@ export default function AdminProductosPage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDelete(product.id)}
+                      onClick={() => setDeleteTarget(product)}
                       className="flex-1"
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
@@ -646,18 +982,25 @@ export default function AdminProductosPage() {
                 {products.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell>
-                      <div className="relative group cursor-pointer" onClick={() => openImageViewer(product, 0)}>
+                      <button
+                        type="button"
+                        onClick={() => openImageViewer(product, 0)}
+                        aria-label={`Ver imágenes de ${product.title}`}
+                        className="relative group block"
+                      >
                         <img
                           src={product.image_url}
                           alt={product.title}
                           className="w-16 h-16 object-cover rounded"
                         />
-                        <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition flex items-center justify-center opacity-0 group-hover:opacity-100 rounded">
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-center justify-center opacity-0 group-hover:opacity-100 rounded">
                           <ZoomIn className="h-5 w-5 text-white" />
                         </div>
-                      </div>
+                      </button>
                     </TableCell>
-                    <TableCell className="font-medium">{product.title}</TableCell>
+                    <TableCell className="font-medium">
+                      {product.title}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">{product.category}</Badge>
                     </TableCell>
@@ -665,7 +1008,9 @@ export default function AdminProductosPage() {
                       {product.quantity > 0 ? product.quantity : "-"}
                     </TableCell>
                     <TableCell className="text-center">
-                      {product.units_per_pallet > 0 ? product.units_per_pallet : "-"}
+                      {product.units_per_pallet > 0
+                        ? product.units_per_pallet
+                        : "-"}
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -673,7 +1018,11 @@ export default function AdminProductosPage() {
                           checked={product.available}
                           onCheckedChange={() => toggleAvailability(product)}
                         />
-                        <Badge className={product.available ? "bg-green-500" : "bg-red-500"}>
+                        <Badge
+                          className={
+                            product.available ? "bg-green-500" : "bg-red-500"
+                          }
+                        >
                           {product.available ? "Disponible" : "No disponible"}
                         </Badge>
                       </div>
@@ -700,7 +1049,7 @@ export default function AdminProductosPage() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleDelete(product.id)}
+                          onClick={() => setDeleteTarget(product)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -713,11 +1062,15 @@ export default function AdminProductosPage() {
           </Card>
         )}
 
-        {products.length === 0 && (
+        {products.length === 0 && !refreshing && (
           <div className="text-center py-16">
             <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">No hay productos</h3>
-            <p className="text-gray-500">Comienza agregando tu primer producto</p>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              No hay productos
+            </h3>
+            <p className="text-gray-500">
+              Comienza agregando tu primer producto
+            </p>
           </div>
         )}
       </div>

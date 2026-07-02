@@ -33,6 +33,12 @@ yarn-error.log*
 .env*.local
 .env
 
+# Claude Code MCP config (contiene tokens locales)
+.mcp.json
+
+# Supabase CLI (archivos temporales locales)
+supabase/.temp/
+
 # vercel
 .vercel
 

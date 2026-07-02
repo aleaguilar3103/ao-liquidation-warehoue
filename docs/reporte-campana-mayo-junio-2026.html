@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reporte de Campaña · AO Liquidation Warehouse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy: #0F233F;
+    --navy-deep: #0A1829;
+    --steel: #1E3A5F;
+    --red: #E11D27;
+    --red-dark: #B91019;
+    --gold: #FBBF24;
+    --bg: #F8FAFC;
+    --border: #E5E7EB;
+    --text: #1F2937;
+    --muted: #6B7280;
+    --green: #16A34A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 900px; margin: 0 auto; background: #fff; }
+
+  /* ---------- HEADER ---------- */
+  .hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%);
+    color: #fff;
+    padding: 44px 48px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    right: -80px; top: -80px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(225,29,39,.18) 0%, transparent 70%);
+  }
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; position: relative; z-index: 1; }
+  .hero img { height: 54px; width: auto; }
+  .hero-badge {
+    font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--gold); background: rgba(251,191,36,.12);
+    padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+  }
+  .hero h1 { font-size: 30px; font-weight: 800; margin-top: 26px; line-height: 1.15; position: relative; z-index: 1; }
+  .hero .subtitle { color: rgba(255,255,255,.72); margin-top: 10px; font-size: 15px; max-width: 560px; position: relative; z-index: 1; }
+  .hero-meta { display: flex; gap: 28px; margin-top: 24px; position: relative; z-index: 1; flex-wrap: wrap; }
+  .hero-meta div { font-size: 13px; }
+  .hero-meta .k { color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .08em; font-size: 10px; font-weight: 600; }
+  .hero-meta .v { color: #fff; font-weight: 600; font-size: 14px; margin-top: 2px; }
+
+  /* ---------- SECTIONS ---------- */
+  section { padding: 40px 48px; border-bottom: 1px solid var(--border); }
+  .sec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .sec-num {
+    width: 30px; height: 30px; border-radius: 9px; background: var(--navy); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0;
+  }
+  .sec-head h2 { font-size: 21px; font-weight: 800; color: var(--navy); }
+  .sec-sub { color: var(--muted); font-size: 14px; margin: 4px 0 24px 42px; }
+
+  /* ---------- KPI CARDS ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .kpi {
+    border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+    background: linear-gradient(180deg, #fff 0%, #FAFBFD 100%);
+  }
+  .kpi .label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+  .kpi .num { font-size: 32px; font-weight: 800; color: var(--navy); margin-top: 6px; line-height: 1; }
+  .kpi .num small { font-size: 16px; font-weight: 700; color: var(--muted); }
+  .kpi .foot { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .kpi.accent { border-color: rgba(225,29,39,.25); background: linear-gradient(180deg, #fff 0%, #FFF5F5 100%); }
+  .kpi.accent .num { color: var(--red); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
+    padding: 3px 9px; border-radius: 999px; margin-top: 10px;
+  }
+  .chip.good { background: rgba(22,163,74,.1); color: var(--green); }
+  .chip.warn { background: rgba(225,29,39,.1); color: var(--red-dark); }
+
+  /* ---------- BAR CHARTS ---------- */
+  .chart { margin-top: 8px; }
+  .chart-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 14px; }
+  .bar-row { display: grid; grid-template-columns: 190px 1fr 78px; align-items: center; gap: 12px; margin-bottom: 11px; }
+  .bar-label { font-size: 13px; font-weight: 500; color: var(--text); }
+  .bar-track { background: #EEF2F7; border-radius: 999px; height: 22px; overflow: hidden; }
+  .bar-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--steel), var(--navy));
+  }
+  .bar-fill.red { background: linear-gradient(90deg, var(--red), var(--red-dark)); }
+  .bar-value { font-size: 13px; font-weight: 700; color: var(--navy); text-align: right; }
+  .bar-value small { color: var(--muted); font-weight: 500; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  .two-col .bar-row { grid-template-columns: 120px 1fr 62px; }
+
+  /* ---------- WHATSAPP / STATUS ---------- */
+  .status-banner {
+    display: flex; gap: 14px; align-items: flex-start;
+    border-radius: 14px; padding: 18px 20px; font-size: 14px;
+  }
+  .status-banner .icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+  .status-banner.info { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A5F; }
+  .status-banner.alert { background: #FFF5F5; border: 1px solid rgba(225,29,39,.3); color: #7F1D1D; }
+  .status-banner strong { font-weight: 700; }
+
+  .flow { display: flex; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+  .flow-step {
+    flex: 1; min-width: 120px; text-align: center; border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 10px; background: #fff;
+  }
+  .flow-step .fnum { font-size: 24px; font-weight: 800; color: var(--navy); }
+  .flow-step .flabel { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .flow-arrow { color: var(--border); font-size: 20px; font-weight: 700; }
+
+  /* ---------- EMPTY / PENDING METRICS ---------- */
+  .empty-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 4px; }
+  .empty-card {
+    border: 1.5px dashed rgba(225,29,39,.35); border-radius: 14px; padding: 18px 16px; text-align: center;
+    background: repeating-linear-gradient(45deg, #fff, #fff 10px, #FFFAFA 10px, #FFFAFA 20px);
+  }
+  .empty-card .num { font-size: 30px; font-weight: 800; color: #CBD5E1; line-height: 1; }
+  .empty-card .num.has { color: var(--navy); }
+  .empty-card .label { font-size: 11px; color: var(--muted); margin-top: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .empty-card .tag { font-size: 10px; color: var(--red-dark); font-weight: 700; margin-top: 6px; }
+
+  /* ---------- NEXT STEPS ---------- */
+  .steps { display: grid; gap: 14px; margin-top: 4px; }
+  .step { display: flex; gap: 16px; align-items: flex-start; border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+  .step .n { width: 28px; height: 28px; border-radius: 999px; background: var(--red); color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step h4 { font-size: 15px; font-weight: 700; color: var(--navy); }
+  .step p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  /* ---------- FOOTER ---------- */
+  footer { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%); color: rgba(255,255,255,.8); padding: 28px 48px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+  footer strong { color: #fff; }
+  footer .r { color: var(--gold); font-weight: 600; }
+
+  .note { font-size: 12px; color: var(--muted); margin-top: 16px; font-style: italic; }
+
+  @media (max-width: 720px) {
+    .hero, section, footer { padding-left: 24px; padding-right: 24px; }
+    .kpis, .empty-grid { grid-template-columns: 1fr 1fr; }
+    .two-col { grid-template-columns: 1fr; gap: 28px; }
+    .bar-row { grid-template-columns: 130px 1fr 64px; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    body { background: #fff; }
+    .page { max-width: 100%; }
+    section { page-break-inside: avoid; }
+    .hero::after { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===================== HERO ===================== -->
+  <header class="hero">
+    <div class="hero-top">
+      <img src="https://storage.googleapis.com/msgsndr/pvSYCYQR9RHbeg9BXuIL/media/68f6739418c4202b283f9ef9.png" alt="AO Liquidation Warehouse" />
+      <span class="hero-badge">Reporte de Campaña</span>
+    </div>
+    <h1>Resultados de Campañas Publicitarias<br />y Generación de Leads</h1>
+    <p class="subtitle">Resumen de inversión, alcance y estado de seguimiento de los prospectos generados para AO Liquidation Warehouse.</p>
+    <div class="hero-meta">
+      <div><div class="k">Período</div><div class="v">15 may – 30 jun, 2026</div></div>
+      <div><div class="k">Preparado</div><div class="v">1 de julio, 2026</div></div>
+      <div><div class="k">Fuente de datos</div><div class="v">CRM · GoHighLevel</div></div>
+    </div>
+  </header>
+
+  <!-- ===================== 1. INVERSIÓN ===================== -->
+  <section>
+    <div class="sec-head"><span class="sec-num">1</span><h2>Inversión Publicitaria y Alcance</h2></div>
+    <p class="sec-sub">Campaña de anuncios pagados (Meta) dirigida a la captación de prospectos cualificados.</p>
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">Inversión total</div>
+        <div class="num"><small>$</small>300</div>
+        <div class="foot">USD · 46 días de campaña</div>
+      </div>
+      <div class="kpi accent">
+        <div class="label">Leads cualificados</div>
+        <div class="num">358</div>
+        <div class="foot">Verificados en el CRM (datos completos)</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Costo por lead</div>
+        <div class="num"><small>$</small>0.84</div>
+        <span class="chip good">▲ Costo muy eficiente</span>
+      </div>
+    </div>
+    <p class="note">Cada lead cualificado entregó nombre, número de teléfono, correo electrónico, tipo de negocio y categoría de interés. Un costo por lead de $0.84 está muy por debajo del promedio del sector para prospectos B2B, lo que indica una segmentación y un mensaje altamente efectivos.</p>
+  </section>
+
+  <!-- ===================== 2. PERFIL DE LEADS ===================== -->
+  <section>
+    <div class="sec-head"><span class="sec-num">2</span><h2>Perfil de los Leads Generados</h2></div>
+    <p class="sec-sub">Análisis de los 358 prospectos según los datos declarados en el formulario.</p>
+
+    <div class="two-col">
+      <div class="chart">
+        <div class="chart-title">Tipo de negocio</div>
+        <div class="bar-row"><div class="bar-label">Aún explorando</div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><div class="bar-value">106 <small>30%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Revendedor / Reventa</div><div class="bar-track"><div class="bar-fill" style="width:94%"></div></div><div class="bar-value">100 <small>28%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Tienda online</div><div class="bar-track"><div class="bar-fill" style="width:73%"></div></div><div class="bar-value">77 <small>21%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Otro</div><div class="bar-track"><div class="bar-fill" style="width:32%"></div></div><div class="bar-value">34 <small>9%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Tienda física</div><div class="bar-track"><div class="bar-fill" style="width:26%"></div></div><div class="bar-value">28 <small>8%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Mayorista</div><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div><div class="bar-value">14 <small>4%</small></div></div>
+      </div>
+
+      <div class="chart">
+        <div class="chart-title">Categorías de interés</div>
+        <div class="bar-row"><div class="bar-label">Ropa y calzado</div><div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div><div class="bar-value">188 <small>53%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Hogar y muebles</div><div class="bar-track"><div class="bar-fill red" style="width:37%"></div></div><div class="bar-value">70 <small>20%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Tecnología</div><div class="bar-track"><div class="bar-fill red" style="width:22%"></div></div><div class="bar-value">41 <small>11%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Juguetes / Niños</div><div class="bar-track"><div class="bar-fill red" style="width:15%"></div></div><div class="bar-value">28 <small>8%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Herramientas</div><div class="bar-track"><div class="bar-fill red" style="width:12%"></div></div><div class="bar-value">22 <small>6%</small></div></div>
+        <div class="bar-row"><div class="bar-label">Otras</div><div class="bar-track"><div class="bar-fill red" style="width:9%"></div></div><div class="bar-value">19 <small>5%</small></div></div>
+      </div>
+    </div>
+    <p class="note">Hallazgo clave: más de la mitad de los prospectos (53%) busca <strong>ropa y calzado</strong>, seguido de hogar y muebles. En cuanto al perfil, casi 6 de cada 10 son revendedores o negocios en fase de exploración — un público ideal para ofertas de liquidación al por mayor.</p>
+  </section>
+
+  <!-- ===================== 3. WHATSAPP ===================== -->
+  <section>
+    <div class="sec-head"><span class="sec-num">3</span><h2>Campaña de WhatsApp</h2></div>
+    <p class="sec-sub">Envío masivo de mensajes para activar y cualificar prospectos por WhatsApp.</p>
+
+    <div class="flow">
+      <div class="flow-step"><div class="fnum">2,000</div><div class="flabel">Mensajes enviados</div></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><div class="fnum">50</div><div class="flabel">Leads interesados</div></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><div class="fnum">250</div><div class="flabel">Meta proyectada</div></div>
+    </div>
+
+    <div class="status-banner alert" style="margin-top:22px">
+      <span class="icon">⚠️</span>
+      <div><strong>Estado: en curso — campaña reiniciada.</strong> Se presentó un error de facturación con la tarjeta usada para los pagos, lo que obligó a reiniciar la campaña. A pesar de la interrupción, ya se han captado <strong>50 leads interesados</strong>. Con la campaña restablecida, se proyecta alcanzar <strong>~250 leads</strong> a través de este canal.</div>
+    </div>
+  </section>
+
+  <!-- ===================== 4. SEGUIMIENTO (PENDIENTE) ===================== -->
+  <section>
+    <div class="sec-head"><span class="sec-num">4</span><h2>Seguimiento de Leads</h2></div>
+    <p class="sec-sub">Estado del contacto y avance de los 358 prospectos cualificados.</p>
+
+    <div class="status-banner alert" style="margin-bottom:24px">
+      <span class="icon">🛑</span>
+      <div><strong>Métrica pendiente — sin trazabilidad en la plataforma.</strong> Actualmente el seguimiento se realiza por llamada telefónica <strong>sin registrarse en el CRM</strong>. Por eso no podemos medir cuántos leads fueron contactados con éxito, cuántos están en seguimiento activo ni cuántos aún no han sido contactados. La única marca registrada es la etiqueta <em>“no contestó”</em>.</div>
+    </div>
+
+    <div class="empty-grid">
+      <div class="empty-card"><div class="num">—</div><div class="label">Contactados con éxito</div><div class="tag">Sin registro</div></div>
+      <div class="empty-card"><div class="num has">153</div><div class="label">Marcados “no contestó”</div></div>
+      <div class="empty-card"><div class="num">—</div><div class="label">En seguimiento activo</div><div class="tag">Sin registro</div></div>
+      <div class="empty-card"><div class="num">—</div><div class="label">Sin contactar aún</div><div class="tag">Sin registro</div></div>
+    </div>
+    <p class="note">De los 358 leads, únicamente 153 tienen registro (“no contestó”). De los ~205 restantes no existe ninguna evidencia de contacto en la plataforma. <strong>Recomendación:</strong> implementar de inmediato el sistema de seguimiento por etapas descrito en la sección 5 para recuperar la trazabilidad y no perder prospectos que costaron $0.84 cada uno.</p>
+  </section>
+
+  <!-- ===================== 5. PRÓXIMOS PASOS ===================== -->
+  <section>
+    <div class="sec-head"><span class="sec-num">5</span><h2>Recomendaciones y Próximos Pasos</h2></div>
+    <p class="sec-sub">Acciones prioritarias para capitalizar los leads ya generados.</p>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><div><h4>Activar un embudo de seguimiento en el CRM</h4><p>Crear un pipeline con etapas (Sin contactar → Llamado / No contestó → En seguimiento 1·2·3 → Interesado → No colaboró → Ganado) para dar trazabilidad y métricas automáticas a cada prospecto.</p></div></div>
+      <div class="step"><span class="n">2</span><div><h4>Registrar cada llamada dentro de la plataforma</h4><p>Que el equipo llame desde el CRM (o etiquete el resultado tras cada llamada). Sin este paso, seguiremos sin saber el retorno real de la inversión.</p></div></div>
+      <div class="step"><span class="n">3</span><div><h4>Priorizar por categoría de mayor demanda</h4><p>Enfocar las primeras ofertas en ropa y calzado (53% de la demanda) y hogar, donde se concentra el interés.</p></div></div>
+      <div class="step"><span class="n">4</span><div><h4>Reanudar y escalar la campaña de WhatsApp</h4><p>Con la facturación corregida, completar el envío hasta alcanzar la meta de ~250 leads adicionales.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer>
+    <div><strong>AO Liquidation Warehouse</strong> · Reporte de campaña</div>
+    <div class="r">aoliquidationwarehouse.com</div>
+  </footer>
+
+</div>
+</body>
+</html>
