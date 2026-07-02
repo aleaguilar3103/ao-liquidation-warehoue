@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -27,7 +28,8 @@ export async function uploadProductImage(file: File): Promise<string | null> {
   const fileName = `${Math.random()}.${fileExt}`;
   const filePath = `${fileName}`;
 
-  const { error } = await supabase.storage
+  const db = createBrowserSupabaseClient();
+  const { error } = await db.storage
     .from('product-images')
     .upload(filePath, file);
 
@@ -36,7 +38,7 @@ export async function uploadProductImage(file: File): Promise<string | null> {
     return null;
   }
 
-  const { data } = supabase.storage
+  const { data } = db.storage
     .from('product-images')
     .getPublicUrl(filePath);
 
@@ -52,7 +54,8 @@ export async function deleteProductImage(imageUrl: string): Promise<boolean> {
   const fileName = imageUrl.split('/').pop();
   if (!fileName) return false;
 
-  const { error } = await supabase.storage
+  const db = createBrowserSupabaseClient();
+  const { error } = await db.storage
     .from('product-images')
     .remove([fileName]);
 

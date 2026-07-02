@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 
 export interface Product {
   id: string;
@@ -90,9 +91,14 @@ export async function addProduct(product: Omit<Product, 'id' | 'created_at' | 'u
     return null;
   }
 
-  const { data, error } = await supabase
+  const db = createClient();
+  // Cast puntual: @supabase/ssr@0.5.2 (instalado) infiere el genérico Database
+  // de forma incompatible con @supabase/supabase-js@2.76 (mismatch de versiones
+  // preexistente, no introducido por este cambio), lo que resuelve el tipo de
+  // fila a `never`. No afecta el comportamiento en runtime.
+  const { data, error } = await db
     .from('products')
-    .insert([product])
+    .insert([product] as never)
     .select()
     .single();
 
@@ -110,9 +116,11 @@ export async function updateProduct(id: string, product: Partial<Omit<Product, '
     return null;
   }
 
-  const { data, error } = await supabase
+  const db = createClient();
+  // Ver nota de cast en addProduct (mismatch de tipos @supabase/ssr vs supabase-js).
+  const { data, error } = await db
     .from('products')
-    .update(product)
+    .update(product as never)
     .eq('id', id)
     .select()
     .single();
@@ -131,7 +139,8 @@ export async function deleteProduct(id: string): Promise<boolean> {
     return false;
   }
 
-  const { error } = await supabase
+  const db = createClient();
+  const { error } = await db
     .from('products')
     .delete()
     .eq('id', id);
