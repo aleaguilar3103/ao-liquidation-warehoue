@@ -8,9 +8,17 @@ export async function GET(request: Request) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const rawNext = searchParams.get("next") ?? "/admin";
-  // Evita open-redirect: solo rutas internas ("/algo", nunca "//externo").
-  const next =
-    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/admin";
+  // Evita open-redirect: resolvemos con el mismo parser que hará la redirección
+  // y solo aceptamos el destino si se queda en nuestro propio origin.
+  let next = "/admin";
+  try {
+    const candidate = new URL(rawNext, origin);
+    if (candidate.origin === origin) {
+      next = candidate.pathname + candidate.search + candidate.hash;
+    }
+  } catch {
+    // rawNext inválido → se queda el default "/admin"
+  }
 
   const supabase = createClient();
 
