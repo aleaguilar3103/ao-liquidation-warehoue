@@ -56,6 +56,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import {
@@ -70,6 +71,9 @@ import {
   RefreshCw,
   Info,
   Megaphone,
+  Check,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 
 const WEEKDAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -84,6 +88,7 @@ interface ContentFormData {
   title: string;
   copy: string;
   status: ContentStatus;
+  done: boolean;
   notes: string;
   product_id: string | null;
 }
@@ -149,6 +154,7 @@ export default function AdminContenidoPage() {
     title: "",
     copy: "",
     status: "nuevo",
+    done: false,
     notes: "",
     product_id: null,
   }));
@@ -216,6 +222,7 @@ export default function AdminContenidoPage() {
       produccion: inMonth.filter((i) => i.status === "produccion").length,
       publicado: inMonth.filter((i) => i.status === "publicado").length,
       pautado: inMonth.filter((i) => i.status === "pautado").length,
+      hechos: inMonth.filter((i) => i.done).length,
     };
   }, [items, monthPrefix]);
 
@@ -293,6 +300,7 @@ export default function AdminContenidoPage() {
       title: "",
       copy: "",
       status: "nuevo",
+      done: false,
       notes: "",
       product_id: null,
     });
@@ -309,6 +317,7 @@ export default function AdminContenidoPage() {
       title: item.title,
       copy: item.copy,
       status: item.status,
+      done: item.done ?? false,
       notes: item.notes,
       product_id: item.product_id ?? null,
     });
@@ -416,6 +425,30 @@ export default function AdminContenidoPage() {
     }
   };
 
+  // Marca rápida "ya se hizo" (optimista, con reversión si falla).
+  const toggleDone = async (item: ContentItem) => {
+    const next = !item.done;
+
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, done: next } : i)),
+    );
+
+    if (isExample) return;
+
+    const res = await updateContent(item.id, { done: next });
+    if (!res) {
+      // Revertir en caso de error.
+      setItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, done: !next } : i)),
+      );
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const resetExamples = () => {
     setItems(exampleContent(new Date(viewYear, viewMonth, 15)));
     toast({ title: "Ejemplos restaurados" });
@@ -500,41 +533,79 @@ export default function AdminContenidoPage() {
               </div>
             ) : (
               dayModalItems.map((item) => (
-                <button
-                  type="button"
+                <div
                   key={item.id}
-                  onClick={() => openEdit(item)}
-                  className="w-full text-left rounded-lg border p-3 hover:border-brand hover:bg-brand/5 transition"
+                  className={`flex items-start gap-2 rounded-lg border p-3 transition ${
+                    item.done
+                      ? "border-emerald-200 bg-emerald-50/50"
+                      : "hover:border-brand hover:bg-brand/5"
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-gray-900">
-                      {item.title}
-                    </span>
-                    <Edit className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                    <Badge
-                      variant="outline"
-                      className={CHANNELS[item.channel].badge}
-                    >
-                      {CHANNELS[item.channel].label}
-                    </Badge>
-                    <Badge variant="outline">
-                      {FORMATS[item.format].label}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className={STATUSES[item.status].badge}
-                    >
-                      {STATUSES[item.status].label}
-                    </Badge>
-                  </div>
-                  {item.copy && (
-                    <p className="text-sm text-gray-500 mt-2 line-clamp-2">
-                      {item.copy}
-                    </p>
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleDone(item)}
+                    aria-pressed={item.done}
+                    title={
+                      item.done ? "Marcar como no hecho" : "Marcar como hecho"
+                    }
+                    className="mt-0.5 shrink-0"
+                  >
+                    {item.done ? (
+                      <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                    ) : (
+                      <Circle className="h-6 w-6 text-gray-300 hover:text-brand transition" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openEdit(item)}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span
+                        className={`font-medium ${
+                          item.done
+                            ? "text-gray-500 line-through"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {item.title}
+                      </span>
+                      <Edit className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      {item.done && (
+                        <Badge
+                          variant="outline"
+                          className="bg-emerald-100 text-emerald-700 border-emerald-200"
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Hecho
+                        </Badge>
+                      )}
+                      <Badge
+                        variant="outline"
+                        className={CHANNELS[item.channel].badge}
+                      >
+                        {CHANNELS[item.channel].label}
+                      </Badge>
+                      <Badge variant="outline">
+                        {FORMATS[item.format].label}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={STATUSES[item.status].badge}
+                      >
+                        {STATUSES[item.status].label}
+                      </Badge>
+                    </div>
+                    {item.copy && (
+                      <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+                        {item.copy}
+                      </p>
+                    )}
+                  </button>
+                </div>
               ))
             )}
           </div>
@@ -673,6 +744,31 @@ export default function AdminContenidoPage() {
                 placeholder="El texto del post (se llena en la fase de contenido real)..."
               />
             </div>
+
+            <label
+              htmlFor="done"
+              className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition ${
+                formData.done
+                  ? "border-emerald-300 bg-emerald-50"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              <Checkbox
+                id="done"
+                checked={formData.done}
+                onCheckedChange={(c) =>
+                  setFormData({ ...formData, done: c === true })
+                }
+              />
+              <div>
+                <span className="font-medium text-gray-900">
+                  Ya se hizo / ya se publicó
+                </span>
+                <p className="text-sm text-gray-500">
+                  Márcalo cuando la pieza ya esté lista y subida.
+                </p>
+              </div>
+            </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -839,13 +935,20 @@ export default function AdminContenidoPage() {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <StatCard
             label="Total del mes"
             value={stats.total}
             className="from-blue-50 border-blue-100 text-brand"
             icon={<CalendarDays className="w-5 h-5 text-white" />}
             iconBg="from-brand to-brand-dark"
+          />
+          <StatCard
+            label="Hechos del mes"
+            value={stats.hechos}
+            className="from-emerald-50 border-emerald-100 text-emerald-600"
+            icon={<CheckCircle2 className="w-5 h-5 text-white" />}
+            iconBg="from-emerald-500 to-emerald-700"
           />
           <StatCard
             label="En producción"
@@ -974,13 +1077,21 @@ export default function AdminContenidoPage() {
                       {dayItems.map((item) => (
                         <div
                           key={item.id}
-                          className={`flex items-center gap-1 rounded px-1.5 py-1 text-[11px] leading-tight border ${CHANNELS[item.channel].badge}`}
-                          title={`${CHANNELS[item.channel].label} · ${FORMATS[item.format].label} · ${STATUSES[item.status].label}`}
+                          className={`flex items-center gap-1 rounded px-1.5 py-1 text-[11px] leading-tight border ${CHANNELS[item.channel].badge} ${item.done ? "opacity-60" : ""}`}
+                          title={`${CHANNELS[item.channel].label} · ${FORMATS[item.format].label} · ${STATUSES[item.status].label}${item.done ? " · Hecho" : ""}`}
                         >
+                          {item.done ? (
+                            <Check className="h-3 w-3 shrink-0 text-emerald-600" />
+                          ) : (
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUSES[item.status].dot}`}
+                            />
+                          )}
                           <span
-                            className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUSES[item.status].dot}`}
-                          />
-                          <span className="truncate">{item.title}</span>
+                            className={`truncate ${item.done ? "line-through" : ""}`}
+                          >
+                            {item.title}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -994,6 +1105,7 @@ export default function AdminContenidoPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16 text-center">Hecho</TableHead>
                   <TableHead className="w-28">Fecha</TableHead>
                   <TableHead>Título</TableHead>
                   <TableHead>Canal</TableHead>
@@ -1010,11 +1122,37 @@ export default function AdminContenidoPage() {
                     a.scheduled_date.localeCompare(b.scheduled_date),
                   )
                   .map((item) => (
-                    <TableRow key={item.id}>
+                    <TableRow
+                      key={item.id}
+                      className={item.done ? "bg-emerald-50/40" : ""}
+                    >
+                      <TableCell className="text-center">
+                        <button
+                          type="button"
+                          onClick={() => toggleDone(item)}
+                          aria-pressed={item.done}
+                          title={
+                            item.done
+                              ? "Marcar como no hecho"
+                              : "Marcar como hecho"
+                          }
+                          className="inline-flex"
+                        >
+                          {item.done ? (
+                            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-gray-300 hover:text-brand transition" />
+                          )}
+                        </button>
+                      </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {item.scheduled_date}
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell
+                        className={`font-medium ${
+                          item.done ? "text-gray-500 line-through" : ""
+                        }`}
+                      >
                         {item.title}
                       </TableCell>
                       <TableCell>

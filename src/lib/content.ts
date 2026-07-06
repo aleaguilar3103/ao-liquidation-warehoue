@@ -13,6 +13,8 @@ export interface ContentItem {
   title: string;
   copy: string;
   status: ContentStatus;
+  /** Marca "ya se hizo": independiente del status (workflow). */
+  done: boolean;
   notes: string;
   product_id?: string | null;
   created_at?: string;
@@ -124,6 +126,8 @@ export function exampleContent(reference: Date = new Date()): ContentItem[] {
     title,
     copy: "",
     status,
+    // En ejemplos, lo ya publicado se muestra como "hecho".
+    done: status === "publicado",
     notes: "",
     product_id: null,
   }));
