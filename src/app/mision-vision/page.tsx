@@ -1,6 +1,8 @@
 import { Eye, Target, Lightbulb, Award } from "lucide-react";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 
+export const dynamic = "force-dynamic";
+
 export default function MisionVisionPage() {
   return (
     <div className="min-h-screen bg-white">

@@ -1,43 +1,12 @@
-"use client";
+import CatalogClient from "@/components/catalogo/CatalogClient";
+import { getPublicProducts } from "@/lib/products";
 
-import { useState, useEffect } from "react";
-import ProductCard from "@/components/ProductCard";
-import { getProducts } from "@/lib/products";
-import { Button } from "@/components/ui/button";
-import type { Product } from "@/lib/products";
+// Los productos los administra el admin (ocultar/estado); servimos siempre fresco
+// para que los cambios se reflejen de inmediato. Sigue siendo SSR (bueno para SEO).
+export const dynamic = "force-dynamic";
 
-export default function CatalogoPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadProducts() {
-      const data = await getProducts();
-      setProducts(data);
-      setLoading(false);
-    }
-    loadProducts();
-  }, []);
-
-  const categories = ["all", ...Array.from(new Set(products.map((p) => p.category)))];
-
-  const filteredProducts =
-    selectedCategory === "all"
-      ? products
-      : products.filter((p) => p.category === selectedCategory);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white pt-32 pb-20 px-4 flex items-center justify-center">
-        <p className="text-xl text-gray-600">Cargando productos...</p>
-      </div>
-    );
-  }
-
-  if (products.length === 0) {
-    return null;
-  }
+export default async function CatalogoPage() {
+  const products = await getPublicProducts();
 
   return (
     <div className="min-h-screen bg-white pt-32 pb-20 px-4">
@@ -51,35 +20,14 @@ export default function CatalogoPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              variant={selectedCategory === category ? "default" : "outline"}
-              className={
-                selectedCategory === category
-                  ? "bg-gradient-to-r from-brand to-brand-dark text-white"
-                  : "border-brand text-brand hover:bg-brand/5"
-              }
-            >
-              {category === "all" ? "Todos" : category}
-            </Button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
+        {products.length === 0 ? (
+          <div className="text-center py-16">
             <p className="text-xl text-gray-600">
-              No se encontraron productos en esta categoría.
+              Pronto publicaremos nuevos pallets. Vuelve a visitarnos.
             </p>
           </div>
+        ) : (
+          <CatalogClient products={products} />
         )}
       </div>
     </div>

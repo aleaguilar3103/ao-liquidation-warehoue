@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle, Users, Package, DollarSign, TrendingUp } from "lucide-react";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 
+export const dynamic = "force-dynamic";
+
 export default function NosotrosPage() {
   return (
     <div className="min-h-screen bg-white">

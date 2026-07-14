@@ -1,35 +1,11 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import { getFeaturedProducts } from "@/lib/products";
 import { ArrowRight } from "lucide-react";
-import type { Product } from "@/lib/products";
 
-export default function FeaturedProducts() {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadFeaturedProducts() {
-      try {
-        const data = await getFeaturedProducts();
-        setFeaturedProducts(data || []);
-      } catch (error) {
-        console.error("Error loading featured products:", error);
-        setFeaturedProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadFeaturedProducts();
-  }, []);
-
-  if (loading) {
-    return null;
-  }
+export default async function FeaturedProducts() {
+  const featuredProducts = await getFeaturedProducts();
 
   if (!featuredProducts || featuredProducts.length === 0) {
     return null;
