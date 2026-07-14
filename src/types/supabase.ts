@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           additional_images: string[] | null
           available: boolean | null
+          is_visible: boolean | null
+          status: string | null
           category: string
           condition: string | null
           created_at: string | null
@@ -33,6 +35,8 @@ export type Database = {
         Insert: {
           additional_images?: string[] | null
           available?: boolean | null
+          is_visible?: boolean | null
+          status?: string | null
           category: string
           condition?: string | null
           created_at?: string | null
@@ -48,6 +52,8 @@ export type Database = {
         Update: {
           additional_images?: string[] | null
           available?: boolean | null
+          is_visible?: boolean | null
+          status?: string | null
           category?: string
           condition?: string | null
           created_at?: string | null

@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/client";
+import type { ProductStatus } from "@/lib/product-status";
 
 export interface Product {
   id: string;
@@ -11,7 +12,10 @@ export interface Product {
   image_url: string;
   additional_images?: string[];
   featured: boolean;
-  available: boolean;
+  status?: ProductStatus;
+  is_visible?: boolean;
+  /** @deprecated Migrado a `status`. Se retira en la limpieza final. */
+  available?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -40,6 +44,26 @@ export async function getProducts(): Promise<Product[]> {
   }
 }
 
+export async function getPublicProducts(): Promise<Product[]> {
+  if (!isSupabaseConfigured()) {
+    console.warn('Supabase not configured, returning empty public products');
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('is_visible', true)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching public products:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
 export async function getFeaturedProducts(): Promise<Product[]> {
   if (!isSupabaseConfigured()) {
     console.warn('Supabase not configured, returning empty featured products');
@@ -51,6 +75,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
       .from('products')
       .select('*')
       .eq('featured', true)
+      .eq('is_visible', true)
       .order('created_at', { ascending: false });
 
     if (error) {
