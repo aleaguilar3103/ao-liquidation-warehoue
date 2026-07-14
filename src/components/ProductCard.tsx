@@ -8,6 +8,8 @@ import { useState } from "react";
 import ProductModal from "./ProductModal";
 import type { Product } from "@/lib/products";
 import Link from "next/link";
+import Image from "next/image";
+import { getStatusConfig } from "@/lib/product-status";
 
 interface ProductCardProps {
   product: Product;
@@ -24,19 +26,29 @@ export default function ProductCard({ product }: ProductCardProps) {
     <>
       <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer bg-white" onClick={() => setModalOpen(true)}>
         <div className="relative h-64 overflow-hidden">
-          <img
-            src={product.image_url}
-            alt={product.title}
-            className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-          />
-          <Badge className="absolute top-4 right-4 bg-gradient-to-r from-brand to-brand-dark text-white">
+          {product.image_url ? (
+            <Image
+              src={product.image_url}
+              alt={product.title}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover hover:scale-110 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+              Sin imagen
+            </div>
+          )}
+          <Badge className="absolute top-4 right-4 z-10 bg-gradient-to-r from-brand to-brand-dark text-white">
             {product.category}
           </Badge>
-          
-          <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white ${
-            product.available ? 'bg-green-500' : 'bg-red-500'
-          }`}>
-            {product.available ? 'DISPONIBLE' : 'NO DISPONIBLE'}
+
+          <div
+            className={`absolute top-4 left-4 z-10 px-3 py-1 rounded-full text-xs font-bold ${
+              getStatusConfig(product.status).badgeClass
+            }`}
+          >
+            {getStatusConfig(product.status).label}
           </div>
         </div>
         <CardContent className="p-6">

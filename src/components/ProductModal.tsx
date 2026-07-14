@@ -20,6 +20,7 @@ import {
   Layers,
 } from "lucide-react";
 import type { Product } from "@/lib/products";
+import { getStatusConfig } from "@/lib/product-status";
 import { useCallback, useEffect, useState } from "react";
 
 interface ProductModalProps {
@@ -41,6 +42,7 @@ export default function ProductModal({
   ].filter(Boolean);
   const hasImages = allImages.length > 0;
   const hasMultipleImages = allImages.length > 1;
+  const statusCfg = getStatusConfig(product.status);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -182,14 +184,8 @@ export default function ProductModal({
                   <Badge className="bg-brand text-white text-xs md:text-sm px-3 py-1">
                     {product.category}
                   </Badge>
-                  <Badge
-                    className={
-                      product.available
-                        ? "bg-green-600 text-white"
-                        : "bg-red-500 text-white"
-                    }
-                  >
-                    {product.available ? "Disponible" : "No disponible"}
+                  <Badge className={statusCfg.badgeClass}>
+                    {statusCfg.label}
                   </Badge>
                 </div>
 
@@ -236,21 +232,26 @@ export default function ProductModal({
                     información detallada.
                   </p>
                   <Button
-                    asChild
+                    asChild={statusCfg.contactEnabled}
                     size="lg"
-                    disabled={!product.available}
+                    disabled={!statusCfg.contactEnabled}
                     className="w-full bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-white"
                   >
-                    <a
-                      href={WHATSAPP_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle className="mr-2 w-4 h-4 md:w-5 md:h-5" />
-                      {product.available
-                        ? "Contactar por WhatsApp"
-                        : "Producto no disponible"}
-                    </a>
+                    {statusCfg.contactEnabled ? (
+                      <a
+                        href={WHATSAPP_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <MessageCircle className="mr-2 w-4 h-4 md:w-5 md:h-5" />
+                        Contactar por WhatsApp
+                      </a>
+                    ) : (
+                      <span>
+                        <MessageCircle className="mr-2 w-4 h-4 md:w-5 md:h-5 inline" />
+                        {statusCfg.label}
+                      </span>
+                    )}
                   </Button>
                 </div>
               </div>
