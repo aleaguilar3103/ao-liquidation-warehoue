@@ -63,6 +63,19 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  PRODUCT_STATUSES,
+  getStatusConfig,
+  DEFAULT_STATUS,
+  type ProductStatus,
+} from "@/lib/product-status";
 import { AdminNav } from "@/components/admin/AdminNav";
 
 interface FormData {
@@ -72,7 +85,8 @@ interface FormData {
   quantity: number;
   units_per_pallet: number;
   featured: boolean;
-  available: boolean;
+  status: ProductStatus;
+  is_visible: boolean;
 }
 
 const EMPTY_FORM: FormData = {
@@ -82,7 +96,8 @@ const EMPTY_FORM: FormData = {
   quantity: 0,
   units_per_pallet: 0,
   featured: false,
-  available: true,
+  status: DEFAULT_STATUS,
+  is_visible: true,
 };
 
 export default function AdminProductosPage() {
@@ -179,7 +194,8 @@ export default function AdminProductosPage() {
       quantity: product.quantity,
       units_per_pallet: product.units_per_pallet,
       featured: product.featured,
-      available: product.available ?? true,
+      status: product.status ?? DEFAULT_STATUS,
+      is_visible: product.is_visible ?? true,
     });
     setMainImage(null);
     setAdditionalImages([]);
@@ -305,25 +321,22 @@ export default function AdminProductosPage() {
     }
   };
 
-  const toggleAvailability = async (product: Product) => {
-    const updatedProduct = {
-      ...product,
-      available: !product.available,
-    };
-
-    const success = await updateProduct(product.id, updatedProduct);
+  const toggleVisibility = async (product: Product) => {
+    const success = await updateProduct(product.id, {
+      is_visible: !product.is_visible,
+    });
     if (success) {
       toast({
-        title: "Disponibilidad actualizada",
+        title: "Visibilidad actualizada",
         description: `"${product.title}" ahora está ${
-          !product.available ? "disponible" : "no disponible"
+          !product.is_visible ? "visible" : "oculto"
         }.`,
       });
       fetchProducts();
     } else {
       toast({
         title: "Error",
-        description: "No se pudo actualizar la disponibilidad.",
+        description: "No se pudo actualizar la visibilidad.",
         variant: "destructive",
       });
     }
@@ -512,6 +525,7 @@ export default function AdminProductosPage() {
                 </Label>
                 <Input
                   id="category"
+                  list="categorias-existentes"
                   value={formData.category}
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
@@ -519,6 +533,13 @@ export default function AdminProductosPage() {
                   required
                   placeholder="Ej: Electrónicos"
                 />
+                <datalist id="categorias-existentes">
+                  {Array.from(new Set(products.map((p) => p.category)))
+                    .filter(Boolean)
+                    .map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                </datalist>
               </div>
 
               <div className="space-y-1.5">
@@ -572,6 +593,27 @@ export default function AdminProductosPage() {
               />
             </div>
 
+            <div className="space-y-1.5">
+              <Label htmlFor="status">Estado</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, status: v as ProductStatus })
+                }
+              >
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRODUCT_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label
                 htmlFor="featured"
@@ -601,27 +643,28 @@ export default function AdminProductosPage() {
               </label>
 
               <label
-                htmlFor="available"
+                htmlFor="is_visible"
                 className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${
-                  formData.available
-                    ? "border-green-400 bg-green-50"
+                  formData.is_visible
+                    ? "border-brand/40 bg-brand/5"
                     : "border-gray-200 hover:border-gray-300 bg-white"
                 }`}
               >
                 <Checkbox
-                  id="available"
-                  checked={formData.available}
+                  id="is_visible"
+                  checked={formData.is_visible}
                   onCheckedChange={(checked) =>
-                    setFormData({ ...formData, available: checked === true })
+                    setFormData({ ...formData, is_visible: checked === true })
                   }
                   className="mt-0.5"
                 />
                 <div className="flex-1">
                   <div className="font-medium text-gray-900">
-                    Disponible para venta
+                    Visible en el sitio
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Los clientes podrán solicitarlo por WhatsApp.
+                    Interno: si lo desmarcas, no aparece en el catálogo ni en
+                    destacados.
                   </p>
                 </div>
               </label>
@@ -889,12 +932,17 @@ export default function AdminProductosPage() {
                   </button>
 
                   <div
-                    className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-bold text-white ${
-                      product.available ? "bg-green-500" : "bg-red-500"
+                    className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-bold ${
+                      getStatusConfig(product.status).badgeClass
                     }`}
                   >
-                    {product.available ? "DISPONIBLE" : "NO DISPONIBLE"}
+                    {getStatusConfig(product.status).label}
                   </div>
+                  {product.is_visible === false && (
+                    <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 text-white text-[10px] font-semibold uppercase tracking-wide">
+                      Oculto
+                    </div>
+                  )}
 
                   {product.featured && (
                     <div className="absolute top-2 right-2 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
@@ -931,11 +979,11 @@ export default function AdminProductosPage() {
 
                   <div className="flex items-center justify-between mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <span className="text-sm font-medium text-gray-700">
-                      Disponible
+                      Visible en el sitio
                     </span>
                     <Switch
-                      checked={product.available}
-                      onCheckedChange={() => toggleAvailability(product)}
+                      checked={product.is_visible ?? true}
+                      onCheckedChange={() => toggleVisibility(product)}
                     />
                   </div>
 
@@ -973,8 +1021,9 @@ export default function AdminProductosPage() {
                   <TableHead>Categoría</TableHead>
                   <TableHead className="text-center">Pallets</TableHead>
                   <TableHead className="text-center">Unidades</TableHead>
-                  <TableHead className="text-center">Disponibilidad</TableHead>
                   <TableHead className="text-center">Estado</TableHead>
+                  <TableHead className="text-center">Visible</TableHead>
+                  <TableHead className="text-center">Destacado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1013,19 +1062,15 @@ export default function AdminProductosPage() {
                         : "-"}
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Switch
-                          checked={product.available}
-                          onCheckedChange={() => toggleAvailability(product)}
-                        />
-                        <Badge
-                          className={
-                            product.available ? "bg-green-500" : "bg-red-500"
-                          }
-                        >
-                          {product.available ? "Disponible" : "No disponible"}
-                        </Badge>
-                      </div>
+                      <Badge className={getStatusConfig(product.status).badgeClass}>
+                        {getStatusConfig(product.status).label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={product.is_visible ?? true}
+                        onCheckedChange={() => toggleVisibility(product)}
+                      />
                     </TableCell>
                     <TableCell className="text-center">
                       {product.featured ? (
