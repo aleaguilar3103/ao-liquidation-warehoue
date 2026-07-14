@@ -12,10 +12,8 @@ export interface Product {
   image_url: string;
   additional_images?: string[];
   featured: boolean;
-  status?: ProductStatus;
-  is_visible?: boolean;
-  /** @deprecated Migrado a `status`. Se retira en la limpieza final. */
-  available?: boolean;
+  status: ProductStatus;
+  is_visible: boolean;
   created_at?: string;
   updated_at?: string;
 }
